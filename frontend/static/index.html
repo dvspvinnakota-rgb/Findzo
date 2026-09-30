@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Findzo - Catering & Event Services Jobs</title>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Razorpay Payments Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/static/css/style.css?v=2">
+</head>
+<body>
+
+  <!-- ==========================================
+       HEADER & UTILITY NAVIGATION
+       ========================================== -->
+  <header class="site-header">
+    <!-- Top Utility Bar -->
+    <div class="top-utility-bar">
+      <div class="utility-container">
+        <div class="utility-left">
+          <span><i class="fa-solid fa-bolt" style="color: var(--accent-gold);"></i> <strong>Findzo Instant Work:</strong> 10,000+ Verified Local Daily Jobs Active</span>
+        </div>
+        <div class="utility-right">
+          <a href="#" class="utility-link" onclick="openPostJobModal(); return false;">
+            <i class="fa-solid fa-plus-circle" style="color: var(--accent-teal);"></i> Post a Job
+          </a>
+          <a href="#" class="utility-link" onclick="openApplicationsModal(); return false;">
+            <i class="fa-solid fa-briefcase"></i> My Applications
+          </a>
+          <a href="#" class="utility-link" onclick="openSavedJobsModal(); return false;">
+            <i class="fa-solid fa-bookmark"></i> Saved Jobs (<span id="saved-jobs-count">0</span>)
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    <nav class="main-nav">
+      <!-- Logo -->
+      <div class="brand-logo-wrap" onclick="resetSearch()">
+        <img src="/static/images/findzo_logo.jpg" alt="Findzo Logo" class="brand-logo-img">
+      </div>
+
+      <!-- Location Selector Pill -->
+      <div class="location-pill" onclick="openLocationModal()">
+        <i class="fa-solid fa-location-dot location-icon"></i>
+        <div class="location-text">
+          <span class="location-label">Work Near:</span>
+          <span class="location-value" id="current-location-text">Andheri, 400058</span>
+        </div>
+        <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto;"></i>
+      </div>
+
+      <!-- Global Search Bar (Amazon Style) -->
+      <div class="amazon-search-container">
+        <select class="category-dropdown" id="global-category-select">
+          <option value="all">All Categories</option>
+          <option value="catering">Catering & Event Services</option>
+        </select>
+        <input type="text" class="search-input" id="global-search-input" placeholder="Search catering, event crew, waiter, pincode..." onkeyup="handleSearchKeyup(event)">
+        <button class="search-btn" onclick="triggerSearch()">
+          <i class="fa-solid fa-magnifying-glass"></i> Search
+        </button>
+      </div>
+
+      <!-- User Action / Profile Button -->
+      <div class="user-action-group">
+        <button class="user-profile-btn" onclick="openAuthOrProfileModal()">
+          <div class="avatar-circle" id="user-avatar-initial">F</div>
+          <span id="user-profile-name-nav">Sign In</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ==========================================
+       MAIN CONTENT CONTAINER
+       ========================================== -->
+  <main class="main-wrapper">
+
+    <!-- Hero Banner & Quick Actions -->
+    <section class="hero-banner-strip">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <i class="fa-solid fa-shield-halved"></i> Daily Payout Guarantee Platform
+        </div>
+        <h1 class="hero-title">Find Catering & Event Work <span>In Minutes.</span></h1>
+        <p class="hero-subtitle">Find local event shifts for waitstaff, banquet crews, servers, and catering teams near you.</p>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-num">₹800–₹2,500</span>
+            <span class="stat-lbl">Daily / Event Pay</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num">1.5 km</span>
+            <span class="stat-lbl">Avg. Proximity</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num">Same-Day</span>
+            <span class="stat-lbl">Direct Payout</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-quick-actions">
+        <button class="btn-hero-primary" onclick="openAuthModal()">
+          <i class="fa-solid fa-mobile-screen-button"></i> Mobile Login / Register
+        </button>
+        <button class="filter-pill" style="justify-content: center; background: rgba(255,255,255,0.1);" onclick="filterByTag('Paid Daily')">
+          <i class="fa-solid fa-money-bill-wave" style="color: var(--accent-emerald);"></i> View Daily Pay Jobs
+        </button>
+      </div>
+    </section>
+
+    <!-- Category Grid Cards (Amazon-Style Discovery) -->
+    <section class="section-wrapper">
+      <div class="section-header">
+        <h2 class="section-title">Catering & Event Services</h2>
+      </div>
+      <div class="category-grid" id="category-cards-container">
+        <!-- Rendered dynamically by JavaScript -->
+      </div>
+    </section>
+
+    <!-- Job Filters -->
+    <div class="fast-filters-bar" id="job-filters">
+      <button class="filter-pill active" id="quick-filter-all" onclick="setQuickFilter('all')">All</button>
+      <button class="filter-pill" id="quick-filter-today" onclick="setQuickFilter('today')"><i class="fa-regular fa-calendar"></i> Today</button>
+      <button class="filter-pill" id="quick-filter-near-me" onclick="setQuickFilter('near_me')"><i class="fa-solid fa-location-dot"></i> Near Me</button>
+      <details class="filter-menu" id="meal-filter-menu">
+        <summary class="filter-pill"><i class="fa-solid fa-sliders"></i> Filters</summary>
+        <div class="filter-menu-panel">
+          <span class="form-label">Meal service</span>
+          <div class="meal-service-options" role="group" aria-label="Meal service">
+            <button type="button" class="meal-service-option active" data-meal-service="all" onclick="setMealServiceFilter('all')">All meal services</button>
+            <button type="button" class="meal-service-option" data-meal-service="lunch" onclick="setMealServiceFilter('lunch')">Lunch</button>
+            <button type="button" class="meal-service-option" data-meal-service="dinner" onclick="setMealServiceFilter('dinner')">Dinner</button>
+            <button type="button" class="meal-service-option" data-meal-service="breakfast+lunch+dinner" onclick="setMealServiceFilter('breakfast+lunch+dinner')">Breakfast + Lunch + Dinner</button>
+            <button type="button" class="meal-service-option" data-meal-service="lunch+dinner" onclick="setMealServiceFilter('lunch+dinner')">Lunch + Dinner</button>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Catering & Event Services -->
+    <section class="section-wrapper" id="section-catering">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fa-solid fa-utensils" style="color: var(--accent-gold);"></i> Catering & Event Services</h2>
+      </div>
+      <div class="jobs-grid" id="catering-jobs-grid">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- Recent / Saved Activity Ribbon -->
+    <section class="activity-ribbon">
+      <div class="section-header" style="margin-bottom: 8px;">
+        <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-main);"><i class="fa-solid fa-history" style="color: var(--accent-gold);"></i> Recently Viewed & Recommended Jobs</h3>
+      </div>
+      <div class="ribbon-scroll" id="recent-activity-ribbon">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================
+       MOBILE STICKY BOTTOM NAVIGATION BAR
+       ========================================== -->
+  <div class="mobile-bottom-nav">
+    <div class="mobile-nav-items">
+      <button class="mobile-nav-btn active" onclick="resetSearch()">
+        <i class="fa-solid fa-house mobile-nav-icon"></i>
+        <span>Home</span>
+      </button>
+      <button class="mobile-nav-btn" onclick="focusMobileSearch()">
+        <i class="fa-solid fa-magnifying-glass mobile-nav-icon"></i>
+        <span>Search</span>
+      </button>
+      <button class="mobile-nav-btn" onclick="openApplicationsModal()">
+        <i class="fa-solid fa-briefcase mobile-nav-icon"></i>
+        <span>My Jobs</span>
+      </button>
+      <button class="mobile-nav-btn" onclick="openSavedJobsModal()">
+        <i class="fa-solid fa-bookmark mobile-nav-icon"></i>
+        <span>Saved</span>
+      </button>
+      <button class="mobile-nav-btn" onclick="openAuthOrProfileModal()">
+        <i class="fa-solid fa-user mobile-nav-icon"></i>
+        <span>Account</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 1: AUTHENTICATION & ONBOARDING (MANDATORY MOBILE LOGIN FIRST)
+       ========================================== -->
+  <div class="modal-overlay" id="auth-modal">
+    <div class="modal-box">
+      <button class="modal-close-btn" onclick="closeModal('auth-modal')"><i class="fa-solid fa-xmark"></i></button>
+      
+      <div class="modal-header-logo">
+        <img src="/static/images/findzo_logo.jpg" alt="Findzo" class="modal-logo-img">
+      </div>
+
+      <!-- STEP 1: MOBILE NUMBER INPUT -->
+      <div id="auth-step-1">
+        <h2 class="modal-title">Enter Mobile Number</h2>
+        <p class="modal-subtitle">Login or create your account to unlock direct employer contact numbers & daily wage listings.</p>
+        
+        <div class="form-group">
+          <label class="form-label">Mobile Number</label>
+          <div class="input-with-prefix">
+            <span class="input-prefix">+91</span>
+            <input type="tel" id="auth-mobile-input" class="form-input" placeholder="98765 43210" maxlength="10">
+          </div>
+        </div>
+
+        <button class="btn-primary-action" onclick="submitMobileAuth()">
+          <i class="fa-solid fa-paper-plane"></i> Send OTP Code
+        </button>
+
+        <p class="demo-hint"><i class="fa-solid fa-lightbulb"></i> Demo Mode: Use any 10-digit number. OTP is <strong>123456</strong>.</p>
+      </div>
+
+      <!-- STEP 2: 6-DIGIT OTP VERIFICATION -->
+      <div id="auth-step-2" style="display: none;">
+        <h2 class="modal-title">Verify OTP Code</h2>
+        <p class="modal-subtitle">Sent 6-digit verification code to <strong id="otp-mobile-display">+91 9876543210</strong></p>
+        
+        <div class="otp-input-row">
+          <input type="text" class="otp-digit" maxlength="1" onkeyup="moveOtpFocus(this, 'otp-2')">
+          <input type="text" id="otp-2" class="otp-digit" maxlength="1" onkeyup="moveOtpFocus(this, 'otp-3')">
+          <input type="text" id="otp-3" class="otp-digit" maxlength="1" onkeyup="moveOtpFocus(this, 'otp-4')">
+          <input type="text" id="otp-4" class="otp-digit" maxlength="1" onkeyup="moveOtpFocus(this, 'otp-5')">
+          <input type="text" id="otp-5" class="otp-digit" maxlength="1" onkeyup="moveOtpFocus(this, 'otp-6')">
+          <input type="text" id="otp-6" class="otp-digit" maxlength="1" onkeyup="moveOtpFocus(this, null)">
+        </div>
+
+        <button class="btn-primary-action" onclick="submitOtpVerify()">
+          <i class="fa-solid fa-check-circle"></i> Verify & Continue
+        </button>
+
+        <div style="text-align: center; margin-top: 12px; font-size: 0.8rem; color: var(--text-muted);">
+          Didn't receive code? <a href="#" style="color: var(--accent-teal);" onclick="resendOtp(); return false;">Resend OTP</a>
+        </div>
+      </div>
+
+      <!-- STEP 3: ROLE SELECTION & ONBOARDING -->
+      <div id="auth-step-3" style="display: none;">
+        <h2 class="modal-title">Select Your Goal</h2>
+        <p class="modal-subtitle">Customize your Findzo experience.</p>
+        
+        <div class="role-options-grid">
+          <div class="role-card selected" id="role-seeker" onclick="selectRole('seeker')">
+            <i class="fa-solid fa-person-digging role-icon"></i>
+            <div class="role-title">Looking for Work</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Catering & Event Services</div>
+          </div>
+          <div class="role-card" id="role-employer" onclick="selectRole('employer')">
+            <i class="fa-solid fa-building-user role-icon"></i>
+            <div class="role-title">Hiring / Post Work</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Contractors, Caterers, Shops</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Preferred Location / Pincode</label>
+          <input type="text" id="onboard-location" class="form-input" value="Andheri West, Mumbai (400058)">
+        </div>
+
+        <button class="btn-primary-action" onclick="finishOnboarding()">
+          <i class="fa-solid fa-rocket"></i> Go to Dashboard
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 2: LOCATION SELECTOR MODAL
+       ========================================== -->
+  <div class="modal-overlay" id="location-modal">
+    <div class="modal-box">
+      <button class="modal-close-btn" onclick="closeModal('location-modal')"><i class="fa-solid fa-xmark"></i></button>
+      <h2 class="modal-title"><i class="fa-solid fa-map-location-dot" style="color: var(--accent-gold);"></i> Select Location / Pincode</h2>
+      <p class="modal-subtitle">Find daily jobs and site workers near your area.</p>
+
+      <button class="btn-primary-action" style="background: rgba(0, 196, 159, 0.15); border: 1px solid var(--accent-teal); color: var(--accent-teal); margin-bottom: 16px;" onclick="detectGeolocation()">
+        <i class="fa-solid fa-location-crosshairs"></i> Detect My Current Location (GPS)
+      </button>
+
+      <div class="form-group">
+        <label class="form-label">Or Enter City / Pincode</label>
+        <input type="text" id="manual-pincode-input" class="form-input" placeholder="e.g. 400058 or Bandra East" value="400058">
+      </div>
+
+      <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-sub); margin-bottom: 8px;">Popular Hubs:</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;">
+        <span class="tag-badge" style="cursor: pointer;" onclick="setPopularLocation('Andheri West, Mumbai', '400058')">Andheri (400058)</span>
+        <span class="tag-badge" style="cursor: pointer;" onclick="setPopularLocation('Bandra West, Mumbai', '400050')">Bandra (400050)</span>
+        <span class="tag-badge" style="cursor: pointer;" onclick="setPopularLocation('Powai, Mumbai', '400076')">Powai (400076)</span>
+        <span class="tag-badge" style="cursor: pointer;" onclick="setPopularLocation('Thane West', '400601')">Thane (400601)</span>
+      </div>
+
+      <button class="btn-primary-action" onclick="saveLocationPreference()">Update Location</button>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 3: QUICK APPLY & CONTACT UNLOCK MODAL
+       ========================================== -->
+  <div class="modal-overlay" id="apply-modal">
+    <div class="modal-box">
+      <button class="modal-close-btn" onclick="closeModal('apply-modal')"><i class="fa-solid fa-xmark"></i></button>
+      <h2 class="modal-title" id="apply-modal-title">Apply for Job</h2>
+      <div class="pay-rate-box" style="margin: 12px 0;">
+        <span class="pay-amount" id="apply-modal-rate">₹950 / day</span>
+        <span class="pay-type" id="apply-modal-employer">Shree Buildcon</span>
+      </div>
+
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;" id="apply-modal-desc">
+        Direct call unlock guarantees instant connection to employer.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">Your Mobile Number</label>
+        <input type="tel" id="apply-applicant-phone" class="form-input" value="9876543210">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Note / Quick Message to Employer (Optional)</label>
+        <textarea id="apply-applicant-notes" class="form-input" style="height: 60px;" placeholder="e.g. Ready for immediate start today with own tools..."></textarea>
+      </div>
+
+      <button class="btn-primary-action" id="btn-confirm-apply" onclick="confirmJobApplication()">
+        <i class="fa-solid fa-phone"></i> Confirm & Unlock Employer Number
+      </button>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 4: EMPLOYER JOB POSTING MODAL
+       ========================================== -->
+  <div class="modal-overlay" id="post-job-modal">
+    <div class="modal-box" style="max-width: 520px;">
+      <button class="modal-close-btn" onclick="closeModal('post-job-modal')"><i class="fa-solid fa-xmark"></i></button>
+      <h2 class="modal-title"><i class="fa-solid fa-bullhorn" style="color: var(--accent-gold);"></i> Post Local Job Requirement</h2>
+      <p class="modal-subtitle">Post a catering or event services job requirement.</p>
+
+      <div class="form-group">
+        <label class="form-label">Job Title</label>
+        <input type="text" id="post-title" class="form-input" placeholder="e.g. Banquet Waitstaff for Wedding Event">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="post-category" class="form-input" style="background: #16213e;">
+            <option value="catering">Catering & Event Services</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pay Rate (₹)</label>
+          <input type="number" id="post-rate" class="form-input" placeholder="900">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label class="form-label" for="post-meal-service">Meal Service</label>
+          <select id="post-meal-service" class="form-input" style="background: #16213e;">
+            <option value="lunch">Lunch</option>
+            <option value="dinner">Dinner</option>
+            <option value="breakfast+lunch+dinner">Breakfast + Lunch + Dinner</option>
+            <option value="lunch+dinner">Lunch + Dinner</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="post-event-date">Event Date</label>
+          <input type="date" id="post-event-date" class="form-input" required>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label class="form-label">Pay Cycle</label>
+          <select id="post-rate-type" class="form-input" style="background: #16213e;">
+            <option value="Daily">Daily Payout</option>
+            <option value="Hourly">Hourly Rate</option>
+            <option value="Per Event">Per Event / Fixed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Location / Pincode</label>
+          <input type="text" id="post-location" class="form-input" placeholder="Andheri, 400058">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Shift Timings & Duration</label>
+        <input type="text" id="post-timings" class="form-input" placeholder="e.g. 8:30 AM - 5:30 PM">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Employer / Business Name & Contact Phone</label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <input type="text" id="post-employer" class="form-input" placeholder="Buildcon Infra">
+          <input type="tel" id="post-phone" class="form-input" placeholder="+91 98200 12345">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Job Description</label>
+        <textarea id="post-description" class="form-input" style="height: 50px;" placeholder="Brief details about work requirements..."></textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+        <button class="btn-primary-action" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: var(--text-main);" onclick="submitNewJobPost(false)">Standard Publish (Free)</button>
+        <button class="btn-primary-action" style="background: linear-gradient(135deg, var(--accent-emerald) 0%, #059669 100%); color: #ffffff;" onclick="submitNewJobPost(true)">
+          <i class="fa-solid fa-credit-card"></i> Pay & Publish (₹199)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Bar -->
+  <div class="toast-notification" id="toast-bar">
+    <i class="fa-solid fa-circle-check" style="color: var(--accent-emerald); font-size: 1.2rem;"></i>
+    <span id="toast-message">Operation successful!</span>
+  </div>
+
+  <!-- Custom App Script -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
