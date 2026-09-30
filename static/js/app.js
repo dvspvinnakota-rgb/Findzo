@@ -2,6 +2,23 @@
    Findzo - Interactive Frontend Application Script
    ========================================================================== */
 
+const firebaseConfig = {
+  apiKey: "AIzaSyCuAEXOw7giFvXdzovW5rOgNlJvawq8hFo",
+  authDomain: "findzo-4599e.firebaseapp.com",
+  projectId: "findzo-4599e",
+  storageBucket: "findzo-4599e.firebasestorage.app",
+  messagingSenderId: "224485628869",
+  appId: "1:224485628869:web:a873a54789422a813a09ac",
+  measurementId: "G-V38ZXTMK6F"
+};
+
+const firebaseApp = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp(firebaseConfig);
+const firebaseDb = firebase.firestore ? firebase.firestore() : null;
+const firebaseAnalytics = firebase.analytics ? firebase.analytics() : null;
+window.firebaseApp = firebaseApp;
+window.firebaseDb = firebaseDb;
+window.firebaseAnalytics = firebaseAnalytics;
+
 // Application State
 const state = {
   user: {
@@ -126,6 +143,21 @@ function renderCategoryGrid(categories) {
 }
 
 async function loadJobs() {
+  try {
+    if (window.firebaseDb) {
+      const snapshot = await window.firebaseDb.collection("jobs").limit(20).get();
+      if (!snapshot.empty) {
+        const firebaseJobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        state.allJobs = firebaseJobs;
+        renderJobSections(firebaseJobs);
+        renderRecentActivity(firebaseJobs);
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn("Firebase jobs unavailable, falling back to local API:", err);
+  }
+
   try {
     let url = `/api/jobs?`;
     if (state.activeCategory && state.activeCategory !== "all") {
